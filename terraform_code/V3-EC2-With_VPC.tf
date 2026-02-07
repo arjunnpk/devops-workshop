@@ -80,3 +80,41 @@ resource "aws_route_table_association" "dpw-rta-public-subent-1" {
     subnet_id = aws_subnet.dpw-public_subent_01.id
     route_table_id = aws_route_table.dpw-public-rt.id
 }
+
+resource "aws_security_group" "demo-sg" {
+  name        = "demo-sg"
+  description = "SSH Access"
+  vpc_id = aws_vpc.dpw-vpc.id 
+  
+  ingress {
+    description      = "Shh access"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  tags = {
+    Name = "ssh-prot"
+
+  }
+}
+resource "aws_instance" "ansible-server" {
+  ami = "ami-0b6c6ebed2801a5cb"
+  instance_type = "t3.micro"
+  key_name = "dpp"
+  vpc_security_group_ids = [aws_security_group.demo-sg.id]
+  subnet_id = aws_subnet.dpw-public_subent_01.id
+for_each = toset(["jenkins-master", "jenkins-slave", "ansible"])
+  tags = {
+    Name = "${each.key}"
+   }
+}
